@@ -1,51 +1,83 @@
+/* Colors mirrored from waybar (Catppuccin Mocha, see waybar/theme.css) */
+
+@define-color main-bg   #11111b; /* crust         */
+@define-color main-fg   #cdd6f4; /* text          */
+@define-color subtext   #a6adc8; /* subtext0      */
+@define-color main-br   #cba6f7; /* mauve         */
+@define-color accent    #8087d6; /* dark-lavender */
+@define-color pill-bg   #313244; /* surface0      */
+
+/* Reset the GTK theme (Adwaita) so its rounded corners / blue
+   selection don't bleed through — same trick waybar uses. */
+* {
+	all: unset;
+	border-radius: 0;
+	font-family: "CommitMono Nerd Font";
+	font-weight: bold;
+	font-size: 16px;
+}
+
 window {
-margin: 0px;
-border: 1px solid #bd93f9;
-background-color: #282a36;
+	margin: 0px;
+	border: 2px solid @accent;
+	background-color: @main-bg;
 }
 
 #input {
-margin: 5px;
-border: none;
-color: #f8f8f2;
-background-color: #44475a;
+	margin: 5px;
+	padding: 4px;
+	border: 2px solid @accent;
+	color: @main-fg;
+	background-color: @pill-bg;
+}
+
+#input image {
+	color: @subtext;
+}
+
+/* Text selection in the search box (e.g. Ctrl+A) */
+#input selection,
+selection {
+	background-color: @accent;
+	color: @main-bg;
 }
 
 #inner-box {
-margin: 5px;
-border: none;
-background-color: #282a36;
+	margin: 5px;
+	background-color: @main-bg;
 }
 
 #outer-box {
-margin: 5px;
-border: none;
-background-color: #282a36;
+	margin: 5px;
+	background-color: @main-bg;
 }
 
 #scroll {
-margin: 0px;
-border: none;
+	margin: 0px;
 }
 
 #text {
-margin: 5px;
-border: none;
-color: #f8f8f2;
-} 
-
-#entry.activatable #text {
-color: #282a36;
+	margin: 5px;
+	color: @subtext;
 }
 
-#entry > * {
-color: #f8f8f2;
+#img {
+	margin-right: 6px;
 }
 
-#entry:selected {
-background-color: #44475a;
+#entry {
+	padding: 2px;
+	background-color: @main-bg;
 }
 
-#entry:selected #text {
-font-weight: bold;
+/* Selected entry matches waybar's active workspace: accent fill,
+   dark (crust) text. */
+#entry:selected,
+#entry:focus {
+	background-color: @accent;
+}
+
+#entry:selected #text,
+#entry:focus #text {
+	color: @main-bg;
 }

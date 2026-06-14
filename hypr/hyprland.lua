@@ -13,7 +13,7 @@ hl.monitor({ output = "DP-2", mode = "1920x1080@60", position = "1280x0", scale 
 ---------------------
 
 local terminal = "kitty"
-local menu = "wofi --show drun"
+local menu = os.getenv("HOME") .. "/.config/wofi/toggle.sh"
 local bar = "waybar"
 local wallpaper = "hyprpaper"
 
