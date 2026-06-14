@@ -73,6 +73,19 @@ hl.config({
 		},
 	},
 
+	group = {
+		col = {
+			border_active = "rgba(8087d6ee)",
+			border_inactive = "rgba(313244ee)",
+		},
+		groupbar = {
+			col = {
+				active = "rgba(8087d6ee)",
+				inactive = "rgba(313244ee)",
+			},
+		},
+	},
+
 	animations = { enabled = true },
 
 	dwindle = { preserve_split = true },
