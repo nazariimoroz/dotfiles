@@ -141,6 +141,9 @@ hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
 
+-- Region screenshot to clipboard
+hl.bind("Print", hl.dsp.exec_cmd("grimblast --notify copysave area"))
+
 -- Switch keyboard layout (us, ru, ua, pl)
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd("hyprctl switchxkblayout all 0"))
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("hyprctl switchxkblayout all 1"))
