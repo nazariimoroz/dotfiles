@@ -181,6 +181,12 @@ for i = 1, 10 do
 	hl.bind(mainMod .. " + CTRL + " .. key, hl.dsp.window.move({ workspace = i }))
 end
 
+-- Switch groups
+for i = 1, 10 do
+	local key = i % 10
+	hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.group.active({index = i}))
+end
+
 -- Special workspace
 hl.bind(mainMod .. " + M", hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + CTRL + M", hl.dsp.window.move({ workspace = "special:magic" }))
@@ -224,8 +230,6 @@ hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tru
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 
 hl.bind(mainMod .. " + G", hl.dsp.group.toggle())
-hl.bind(mainMod .. " + Tab", hl.dsp.group.next())
-hl.bind(mainMod .. " + SHIFT + Tab", hl.dsp.group.prev())
 
 --------------------------------
 ---- WINDOWS AND WORKSPACES ----
