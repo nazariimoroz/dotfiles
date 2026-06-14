@@ -1,0 +1,56 @@
+{
+	"custom/ws1": {
+		"exec": "~/.config/waybar/scripts/workspace 1",
+		"return-type": "json",
+		"expand": true,
+		"on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 1 })'",
+		"on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"+1\" })'",
+		"on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"-1\" })'",
+		"tooltip": false
+	},
+	"custom/ws2": {
+		"exec": "~/.config/waybar/scripts/workspace 2",
+		"return-type": "json",
+		"expand": true,
+		"on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 2 })'",
+		"on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"+1\" })'",
+		"on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"-1\" })'",
+		"tooltip": false
+	},
+	"custom/ws3": {
+		"exec": "~/.config/waybar/scripts/workspace 3",
+		"return-type": "json",
+		"expand": true,
+		"on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 3 })'",
+		"on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"+1\" })'",
+		"on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"-1\" })'",
+		"tooltip": false
+	},
+	"custom/ws4": {
+		"exec": "~/.config/waybar/scripts/workspace 4",
+		"return-type": "json",
+		"expand": true,
+		"on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 4 })'",
+		"on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"+1\" })'",
+		"on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"-1\" })'",
+		"tooltip": false
+	},
+	"custom/ws5": {
+		"exec": "~/.config/waybar/scripts/workspace 5",
+		"return-type": "json",
+		"expand": true,
+		"on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 5 })'",
+		"on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"+1\" })'",
+		"on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"-1\" })'",
+		"tooltip": false
+	},
+	"custom/ws6": {
+		"exec": "~/.config/waybar/scripts/workspace 6",
+		"return-type": "json",
+		"expand": true,
+		"on-click": "hyprctl dispatch 'hl.dsp.focus({ workspace = 6 })'",
+		"on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"+1\" })'",
+		"on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({ workspace = \"-1\" })'",
+		"tooltip": false
+	}
+}

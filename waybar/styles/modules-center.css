@@ -1,0 +1,34 @@
+/*-----------------------------
+    Grouped "pill" containers
+-----------------------------*/
+
+/* Flush together with a 1px divider, exactly like the workspace panels
+   on the left. */
+#media,
+#datetime {
+	background-color: @pill-bg;
+	border-radius: 0;
+	margin: 0;
+	padding: 0 4px;
+	border-right: 1px solid @main-bg;
+}
+
+/* Identical spacing between every element of every group, so the pills
+   read the same. Each item gets 2px on both sides -> a uniform 4px gap
+   between neighbours and a 2px inset from the pill edges. */
+#language,
+#pulseaudio,
+#wireplumber,
+#backlight,
+#battery,
+#custom-sep,
+#clock.date,
+#clock.time {
+	padding: 0 2px;
+	margin: 0;
+}
+
+/* The "/" separators are present but understated. */
+#custom-sep {
+	color: @overlay0;
+}

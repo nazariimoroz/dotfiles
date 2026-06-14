@@ -1,0 +1,14 @@
+{
+	"custom/sep#1": {
+		"format": "/",
+		"tooltip": false
+	},
+	"custom/sep#2": {
+		"format": "/",
+		"tooltip": false
+	},
+	"custom/sep#3": {
+		"format": "/",
+		"tooltip": false
+	}
+}

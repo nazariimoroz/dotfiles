@@ -1,0 +1,16 @@
+{
+	"hyprland/language": {
+		"format": "{short}",
+		// "format-<lang>":
+		"min-length": 2,
+		"max-length": 2,
+		"on-click": "hyprctl switchxkblayout all next"
+		// "keyboard-name":
+		// "min-length":
+		// "max-length":
+		// "menu":
+		// "menu-file":
+		// "menu-actions":
+		// "expand":
+	}
+}

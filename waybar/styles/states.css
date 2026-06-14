@@ -1,0 +1,29 @@
+/* Hover */
+#language:hover,
+#pulseaudio:hover,
+#wireplumber:hover,
+#backlight:hover,
+#battery:hover,
+#clock.date:hover,
+#clock.time:hover {
+	color: @hover-fg;
+}
+
+/* Inactive states */
+#pulseaudio.output.muted,
+#pulseaudio.input.source-muted,
+#wireplumber.muted {
+	color: @hover-fg;
+}
+
+#battery.warning {
+	color: @warning;
+}
+
+#battery.critical {
+	color: @critical;
+}
+
+#battery.charging {
+	color: @charging;
+}

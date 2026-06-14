@@ -1,0 +1,12 @@
+/* All grouped modules share the bar's normal foreground colour;
+   spacing/padding is handled uniformly in modules-center.css. */
+
+#language,
+#pulseaudio,
+#wireplumber,
+#backlight,
+#battery,
+#clock.date,
+#clock.time {
+	color: @pill-fg;
+}

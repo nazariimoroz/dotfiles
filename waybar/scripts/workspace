@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+#
+# Per-workspace state source for Waybar (one instance per workspace).
+#
+# Usage: workspace <id>
+#
+# Emits a JSON line ({"text":..,"class":..}) describing a single Hyprland
+# workspace: the names of all applications open on it (most-recently-focused
+# first, de-duplicated, joined by " / "), or a fixed fallback label when
+# empty. The "active" class is set when this workspace is the focused one.
+# Reprints on every relevant Hyprland event so the bar stays in sync
+# without polling.
+
+set -euo pipefail
+
+WS=${1:?usage: workspace <id>}
+
+# Fallback labels shown when a workspace has no windows.
+declare -A FALLBACK=(
+	[1]="browser"
+	[2]="ide"
+	[3]="space"
+	[4]="staff"
+	[5]="social"
+	[6]="obsidian"
+)
+
+# Friendly names for noisy window classes (lower-cased, matched as prefix).
+declare -A REWRITE=(
+	[org.telegram.desktop]="telegram"
+	[code-url-handler]="code"
+	[code-oss]="code"
+	[org.gnome.nautilus]="files"
+	[com.mitchellh.ghostty]="ghostty"
+)
+
+HYPR_SOCKET="${XDG_RUNTIME_DIR}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}/.socket2.sock"
+
+# Turn a raw window class into a short, readable app name.
+clean_class() {
+	local c=${1,,} key
+	for key in "${!REWRITE[@]}"; do
+		[[ $c == "$key"* ]] && { printf '%s' "${REWRITE[$key]}"; return; }
+	done
+	c=${c%._*}   # drop trailing instance hash (e.g. app._deadbeef)
+	c=${c##*.}   # reverse-DNS class -> last segment
+	printf '%s' "$c"
+}
+
+json_escape() {
+	local s=$1
+	s=${s//\\/\\\\}
+	s=${s//\"/\\\"}
+	printf '%s' "$s"
+}
+
+render() {
+	local active clients label class
+	active=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id' 2>/dev/null) || active=0
+	clients=$(hyprctl clients -j 2>/dev/null) || clients='[]'
+
+	# All window classes on this workspace, ordered most-recently-focused
+	# first (focusHistoryID 0 = current, 1 = previous, ...).
+	local classes=() raw
+	while IFS= read -r raw; do
+		[[ -n $raw ]] && classes+=("$raw")
+	done < <(jq -r --argjson w "$WS" '
+		[.[] | select(.workspace.id == $w)]
+		| sort_by(.focusHistoryID)
+		| .[].class' <<<"$clients" 2>/dev/null)
+
+	# Clean each name and drop duplicates, preserving order.
+	local parts=() name key c
+	declare -A seen=()
+	for c in "${classes[@]}"; do
+		name=$(clean_class "$c")
+		[[ -z $name ]] && continue
+		key=${name,,}
+		[[ -n ${seen[$key]:-} ]] && continue
+		seen[$key]=1
+		parts+=("$name")
+	done
+
+	if ((${#parts[@]})); then
+		label=""
+		for name in "${parts[@]}"; do
+			[[ -n $label ]] && label+=" / "
+			label+=$name
+		done
+	else
+		label=${FALLBACK[$WS]:-$WS}
+	fi
+	label=$(json_escape "$label")
+
+	[[ $WS == "$active" ]] && class="active" || class=""
+
+	printf '{"text":"%s","class":"%s"}\n' "$label" "$class"
+}
+
+render
+
+# Reprint on relevant Hyprland events.
+if [[ -S $HYPR_SOCKET ]]; then
+	socat -u "UNIX-CONNECT:${HYPR_SOCKET}" - 2>/dev/null | while read -r line; do
+		case $line in
+		workspace\>* | focusedmon\>* | activewindow\>* | \
+			openwindow\>* | closewindow\>* | movewindow\>* | \
+			createworkspace\>* | destroyworkspace\>* | windowtitle\>*)
+			render
+			;;
+		esac
+	done
+fi

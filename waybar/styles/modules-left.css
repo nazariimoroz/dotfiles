@@ -1,0 +1,32 @@
+/*----------------
+    Workspaces
+----------------*/
+
+/* Six equal-width panels that together fill the left half of the bar.
+   No vertical padding/margin, so each panel spans the full bar height;
+   a 1px divider keeps them distinct while sitting flush. */
+#custom-ws1,
+#custom-ws2,
+#custom-ws3,
+#custom-ws4,
+#custom-ws5,
+#custom-ws6 {
+	min-width: 124px;
+	padding: 0;
+	margin: 0;
+	background-color: @pill-bg;
+	color: @subtext0;
+	border-right: 1px solid @main-bg;
+}
+
+/* The focused workspace stands out with the accent fill; text size
+   stays the same as the other panels. */
+#custom-ws1.active,
+#custom-ws2.active,
+#custom-ws3.active,
+#custom-ws4.active,
+#custom-ws5.active,
+#custom-ws6.active {
+	background-color: @accent;
+	color: @main-bg;
+}
