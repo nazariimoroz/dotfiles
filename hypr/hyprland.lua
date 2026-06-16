@@ -79,6 +79,7 @@ hl.config({
 			border_inactive = "rgba(313244ee)",
 		},
 		groupbar = {
+			font_family = "CommitMono Nerd Font Bold",
 			col = {
 				active = "rgba(8087d6ee)",
 				inactive = "rgba(313244ee)",
