@@ -1,0 +1,61 @@
+# Style mirrored from wofi (Catppuccin Mocha, see ~/.config/wofi/style.css)
+# crust #11111b | text #cdd6f4 | subtext0 #a6adc8 | mauve #cba6f7
+# accent/dark-lavender #8087d6 | surface0 #313244 | red #f38ba8
+# Square box, 2px accent frame, CommitMono Nerd Font Bold — same as wofi.
+
+[global]
+    font = CommitMono Nerd Font Bold 12
+    markup = full
+    format = "<b>%s</b>\n%b"
+
+    # Square — no rounded corners (like wofi's border-radius: 0)
+    corner_radius = 0
+    frame_width = 2
+    frame_color = "#8087d6"
+    separator_color = frame
+    separator_height = 2
+
+    # Geometry / spacing
+    width = 350
+    height = (0, 300)
+    origin = top-right
+    offset = (12, 12)
+    padding = 10
+    horizontal_padding = 12
+    text_icon_padding = 8
+    gap_size = 6
+
+    # Behaviour
+    icon_position = left
+    min_icon_size = 32
+    max_icon_size = 64
+    show_indicators = yes
+    sort = yes
+    idle_threshold = 120
+    mouse_left_click = do_action, close_current
+    mouse_middle_click = close_all
+    mouse_right_click = close_current
+
+    # Progress bar (accent fill)
+    progress_bar = true
+    progress_bar_height = 10
+    progress_bar_frame_width = 1
+    highlight = "#8087d6"
+
+[urgency_low]
+    background = "#11111b"
+    foreground = "#a6adc8"
+    frame_color = "#8087d6"
+    timeout = 5
+
+[urgency_normal]
+    background = "#11111b"
+    foreground = "#cdd6f4"
+    frame_color = "#8087d6"
+    timeout = 8
+
+[urgency_critical]
+    background = "#11111b"
+    foreground = "#cdd6f4"
+    frame_color = "#f38ba8"
+    timeout = 0
