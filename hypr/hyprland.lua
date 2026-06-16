@@ -73,6 +73,10 @@ hl.config({
 		},
 	},
 
+	gestures = {
+    		workspace_swipe_invert = false
+	},
+
 	group = {
 		col = {
 			border_active = "rgba(8087d6ee)",
