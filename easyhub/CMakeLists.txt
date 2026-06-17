@@ -18,9 +18,14 @@ if(NOT ftxui_FOUND)
   FetchContent_MakeAvailable(ftxui)
 endif()
 
-add_executable(easyhub src/main.cpp)
+add_executable(easyhub src/main.cpp src/tray.cpp)
 target_link_libraries(easyhub
   PRIVATE ftxui::screen ftxui::dom ftxui::component)
 
 find_package(Threads REQUIRED)
 target_link_libraries(easyhub PRIVATE Threads::Threads)
+
+# GIO/GDBus for the system-tray (StatusNotifier) support.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GIO REQUIRED IMPORTED_TARGET gio-2.0 gio-unix-2.0)
+target_link_libraries(easyhub PRIVATE PkgConfig::GIO)

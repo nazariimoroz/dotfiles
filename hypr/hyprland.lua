@@ -22,6 +22,8 @@ local wallpaper = "hyprpaper"
 -------------------
 
 hl.on("hyprland.start", function()
+	-- Tray watcher first, so apps export their icons to easyhub's Apps tab.
+	hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/easyhub --watcher")
 	hl.exec_cmd(bar)
 	hl.exec_cmd(wallpaper)
 	hl.exec_cmd("systemctl --user start hyprpolkitagent")

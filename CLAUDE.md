@@ -33,6 +33,10 @@ Key facts when editing the Hyprland config here:
     and per-leaf animations (incl. `layers`, `layersIn`, `layersOut`)
   - `hl.device{...}`, `hl.gesture{...}`
   - `hl.window_rule{...}`, `hl.workspace_rule{...}`
+  - `hl.layer_rule{ name=…, match={ namespace="^…$" }, animation="slide", no_anim=… }`
+    — layer-shell rules (verified: `animation="slide"` works). Test live with
+    `hyprctl eval '<lua>'` (note: `hyprctl keyword` is disabled under the Lua
+    parser — it tells you to "use eval").
 - **Lua-only powers**: timers, events, callbacks, layout data, user-defined
   layouts (Layout API) — things that previously needed plugins.
 - **hyprlang deprecation**: legacy syntax stays for ~1–2 releases after 0.55,
@@ -42,3 +46,22 @@ Key facts when editing the Hyprland config here:
   new and evolving:
   - Wiki: https://wiki.hypr.land/
   - Announcement: https://hypr.land/news/26_lua/
+
+## easyhub system-tray integration
+
+`easyhub` (FTXUI TUI) has an **Apps** tab listing open windows + system-tray
+apps together; selecting a tray app opens its tray menu (e.g. *Open*) to raise
+the window. How it works (because Hyprland has no tray):
+
+- `easyhub --watcher` runs an in-process **`org.kde.StatusNotifierWatcher` +
+  host** (GIO/GDBus, `src/tray.cpp`). Autostarted **first** in
+  `hyprland.lua`'s `hyprland.start` — must be up *before* tray apps launch, or
+  they won't export an icon (an app started before the watcher needs one
+  restart; Telegram re-registers live, Filen/Electron does not).
+- The TUI is a client: reads `RegisteredStatusNotifierItems`, each item's
+  `Menu` (`com.canonical.dbusmenu` → `GetLayout`), and fires `Activate` /
+  dbusmenu `Event("clicked")` to open windows.
+- Key gotcha: many tray apps (Filen) do **nothing** on `Activate`; the working
+  path is triggering the dbusmenu *Open* entry.
+- Debug: `easyhub --list` (dump items+menus), `easyhub --open <substr>`.
+- Build links `gio-2.0`/`gio-unix-2.0` via `pkg_check_modules` in CMake.

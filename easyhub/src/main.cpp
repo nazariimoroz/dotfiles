@@ -14,6 +14,7 @@
 
 #include <array>
 #include <atomic>
+#include <cctype>
 #include <cstdio>
 #include <fstream>
 #include <mutex>
@@ -23,6 +24,8 @@
 #include <vector>
 
 #include <dirent.h>
+
+#include "tray.hpp"
 
 using namespace ftxui;
 
@@ -227,7 +230,56 @@ static Element bar(const std::string& label, int pct, Color c) {
   });
 }
 
-int main() {
+int main(int argc, char** argv) {
+  // Daemon mode: just run the tray watcher (autostarted at login).
+  if (argc > 1 && std::string(argv[1]) == "--watcher") return tray::run_watcher();
+
+  // Debug: dump tray items + their menus, then exit.
+  if (argc > 1 && std::string(argv[1]) == "--list") {
+    for (auto& it : tray::list_items()) {
+      printf("ITEM %s  bus=%s path=%s menu=%s\n", it.name.c_str(),
+             it.bus.c_str(), it.path.c_str(), it.menu_path.c_str());
+      for (auto& e : tray::menu_of(it))
+        printf("   [%d] %s%s\n", e.id, e.separator ? "----" : e.label.c_str(),
+               e.enabled ? "" : " (disabled)");
+    }
+    return 0;
+  }
+
+  // Debug: `--open <substr>` triggers the "Open"-ish menu entry of the tray
+  // item matching <substr> (by item name or any menu label).
+  if (argc > 2 && std::string(argv[1]) == "--open") {
+    std::string q = argv[2];
+    for (auto& it : tray::list_items()) {
+      auto m = tray::menu_of(it);
+      bool match = it.name.find(q) != std::string::npos;
+      for (auto& e : m)
+        if (e.label.find(q) != std::string::npos) match = true;
+      if (!match) continue;
+      for (auto& e : m) {
+        std::string lc = e.label;
+        for (auto& ch : lc) ch = std::tolower(ch);
+        if (e.enabled && !e.separator &&
+            (lc.find("open") != std::string::npos ||
+             lc.find("show") != std::string::npos)) {
+          tray::trigger(it, e.id);
+          printf("triggered '%s' on %s\n", e.label.c_str(), it.name.c_str());
+          return 0;
+        }
+      }
+    }
+    printf("no match for '%s'\n", q.c_str());
+    return 1;
+  }
+
+  // Make sure a tray watcher exists so apps export their icons. If none is
+  // running yet, spawn our own detached daemon. (Apps started before any
+  // watcher existed only register on their next launch.)
+  if (!tray::watcher_present()) {
+    std::string self = argv[0];
+    exec("setsid -f '" + self + "' --watcher >/dev/null 2>&1");
+  }
+
   auto screen = ScreenInteractive::Fullscreen();
 
   // ---- background stats refresh ----
@@ -260,7 +312,8 @@ int main() {
 
   // ---- tab selection ----
   std::vector<std::string> tab_titles = {"  Stats  ", "  Wi-Fi  ",
-                                         "  Bluetooth  ", "  Power  "};
+                                         "  Bluetooth  ", "  Apps  ",
+                                         "  Power  "};
   int tab = 0;
   auto toggle = Toggle(&tab_titles, &tab);
 
@@ -526,8 +579,110 @@ int main() {
            border | bgcolor(Color::Black) | size(WIDTH, GREATER_THAN, 30);
   });
 
+  // ===================== APPS TAB =====================
+  // Every open window + every system-tray app in one list. Enter on a window
+  // focuses it; Enter on a tray app opens its tray menu (e.g. "Open") which
+  // raises the window — exactly like clicking the tray icon in Windows/macOS.
+  struct AppRow {
+    bool is_window = false;
+    std::string addr;  // hyprland window address
+    tray::Item item;   // tray item (when !is_window)
+    bool has_menu = false;
+  };
+  std::vector<AppRow> app_rows;
+  std::vector<std::string> apps_disp{"(press Refresh)"};
+  int apps_sel = 0;
+  int apps_mode = 0;  // 0 = app list, 1 = a tray item's menu
+  tray::Item apps_cur;
+  std::vector<tray::MenuEntry> apps_menu;
+  int apps_prev_tab = -1;  // for auto-refresh when entering the Apps tab
+
+  auto apps_refresh = [&] {
+    apps_mode = 0;
+    app_rows.clear();
+    apps_disp.clear();
+    std::string out = exec(
+        "hyprctl clients -j | jq -r '.[] | "
+        "\"\\(.address)\\t\\(.class)\\t\\(.title)\"'");
+    for (auto& l : lines_of(out)) {
+      std::vector<std::string> f;
+      std::stringstream ss(l);
+      std::string tok;
+      while (std::getline(ss, tok, '\t')) f.push_back(tok);
+      if (f.size() < 2) continue;
+      AppRow r;
+      r.is_window = true;
+      r.addr = f[0];
+      std::string title = f.size() >= 3 ? f[2] : "";
+      apps_disp.push_back("🪟 " + f[1] + (title.empty() ? "" : "  " + title));
+      app_rows.push_back(r);
+    }
+    for (auto& it : tray::list_items()) {
+      AppRow r;
+      r.item = it;
+      r.has_menu = !it.menu_path.empty();
+      apps_disp.push_back("📌 " + it.name + "  (tray)");
+      app_rows.push_back(r);
+    }
+    if (apps_disp.empty()) apps_disp.push_back("(nothing running)");
+    if (apps_sel >= (int)apps_disp.size()) apps_sel = 0;
+  };
+
+  auto apps_on_enter = [&] {
+    if (apps_mode == 1) {  // inside a tray item's menu
+      if (apps_sel >= 0 && apps_sel < (int)apps_menu.size()) {
+        auto& e = apps_menu[apps_sel];
+        if (!e.separator && e.enabled) {
+          tray::trigger(apps_cur, e.id);
+          { std::lock_guard<std::mutex> lk(g.m); g.action = "→ " + e.label; }
+          apps_refresh();
+        }
+      }
+      return;
+    }
+    if (apps_sel < 0 || apps_sel >= (int)app_rows.size()) return;
+    AppRow r = app_rows[apps_sel];
+    if (r.is_window) {
+      exec("hyprctl dispatch focuswindow address:" + r.addr);
+      std::lock_guard<std::mutex> lk(g.m);
+      g.action = "focused window";
+    } else if (r.has_menu) {  // open the tray menu
+      apps_menu = tray::menu_of(r.item);
+      if (apps_menu.empty()) { tray::activate(r.item); return; }
+      apps_cur = r.item;
+      apps_disp.clear();
+      for (auto& e : apps_menu)
+        apps_disp.push_back(e.separator ? "  ────────"
+                            : (e.enabled ? "  " : "· ") + e.label);
+      apps_sel = 0;
+      apps_mode = 1;
+    } else {
+      tray::activate(r.item);
+      std::lock_guard<std::mutex> lk(g.m);
+      g.action = "activated " + r.item.name;
+    }
+  };
+
+  auto apps_menu_opt = MenuOption::Vertical();
+  apps_menu_opt.on_enter = apps_on_enter;
+  auto apps_list = Menu(&apps_disp, &apps_sel, apps_menu_opt);
+  auto apps_btn = Button("Refresh", apps_refresh, ButtonOption::Ascii());
+  auto apps_container = Container::Vertical({apps_list, apps_btn});
+  auto apps_tab = Renderer(apps_container, [&] {
+    return vbox({
+        text(apps_mode == 1 ? "Tray menu — Enter opens · Esc back"
+                            : "Apps + tray — Enter focus/open · r refresh") |
+            bold,
+        separator(),
+        apps_list->Render() | frame | flex,
+        separator(),
+        apps_btn->Render(),
+    });
+  });
+
   // ===================== ASSEMBLE =====================
-  auto tabs = Container::Tab({stats_render, wifi_tab, bt_tab, power_tab}, &tab);
+  auto tabs =
+      Container::Tab({stats_render, wifi_tab, bt_tab, apps_tab, power_tab}, &tab);
   auto root = Container::Vertical({toggle, tabs});
 
   auto layout = Renderer(root, [&] {
@@ -550,6 +705,14 @@ int main() {
 
   // Drain staged scan results + global hotkeys on the main thread.
   auto app = CatchEvent(root_modal, [&](Event e) {
+    // Apps tab: refresh on entry, 'r' to refresh, Esc to leave a tray submenu.
+    if (tab == 3 && apps_prev_tab != 3) apps_refresh();
+    apps_prev_tab = tab;
+    if (tab == 3 && !confirm_open) {
+      if (e == Event::Character('r')) { apps_refresh(); return true; }
+      if (e == Event::Escape && apps_mode == 1) { apps_refresh(); return true; }
+    }
+
     // Volume / brightness hotkeys — Stats tab only, so they don't clash with
     // the Wi-Fi password field or modal buttons.
     if (!confirm_open && tab == 0) {

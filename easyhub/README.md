@@ -25,11 +25,33 @@ plus quick Wi-Fi and Bluetooth connecting.
   Adjust volume/brightness with the on-screen buttons or hotkeys.
 - **Wi-Fi** — scan, pick a network, type a password, connect (`nmcli`).
 - **Bluetooth** — scan, connect / disconnect (`bluetoothctl`).
+- **Apps** — every open window **and** every system-tray app in one list.
+  `Enter` on a window focuses it; `Enter` on a tray app opens its tray menu
+  (e.g. *Open*) which raises the window — exactly like clicking the tray icon.
+  Works for background apps with no visible window (Filen, Telegram, …).
+  `r` refreshes, `Esc` backs out of a tray menu.
 - **Power** — shutdown, restart, log out, sleep (with a confirm dialog).
+
+## System tray (StatusNotifier)
+
+Hyprland has no tray, so easyhub ships its own `StatusNotifierWatcher` + host:
+
+```sh
+easyhub --watcher      # the daemon (autostarted at login from hypr/hyprland.lua)
+```
+
+Tray apps export their icon only if a watcher is running **when they start**, so
+the watcher is autostarted before everything else. Apps launched before any
+watcher existed need one restart to appear. The TUI also spawns the watcher
+itself if none is running.
+
+Debug helpers: `easyhub --list` dumps tray items + their menus;
+`easyhub --open <substr>` triggers the *Open* entry of a matching tray app.
 
 ## Runtime tools
 
-Already present on this box: `nmcli`, `bluetoothctl`, `brightnessctl`, `wpctl`.
+Already present on this box: `nmcli`, `bluetoothctl`, `brightnessctl`, `wpctl`,
+`hyprctl`, `jq`. Tray support links `gio-2.0` / `gio-unix-2.0` (GLib).
 
 ## Build & run
 
