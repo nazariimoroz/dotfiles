@@ -315,7 +315,12 @@ int main(int argc, char** argv) {
                                          "  Bluetooth  ", "  Apps  ",
                                          "  Power  "};
   int tab = 0;
-  auto toggle = Toggle(&tab_titles, &tab);
+  // Bind the toggle's `focused_entry` to the same `tab` as `selected`, so the
+  // highlighted button follows the active panel even when we switch panels via
+  // the number keys (which set `tab` directly, bypassing the toggle's events).
+  auto toggle_opt = MenuOption::Toggle();
+  toggle_opt.focused_entry = &tab;
+  auto toggle = Menu(&tab_titles, &tab, toggle_opt);
 
   // Re-read volume + brightness immediately for snappy feedback after a change.
   auto refresh_av = [&] {
@@ -695,7 +700,7 @@ int main(int argc, char** argv) {
                tabs->Render() | flex,
                separator(),
                hbox({text(" " + status) | dim | flex,
-                     text("Tab/←→ switch · q quit ") | dim}),
+                     text("1-5 switch · q quit ") | dim}),
            }) |
            border;
   });
@@ -708,6 +713,18 @@ int main(int argc, char** argv) {
     // Apps tab: refresh on entry, 'r' to refresh, Esc to leave a tray submenu.
     if (tab == 3 && apps_prev_tab != 3) apps_refresh();
     apps_prev_tab = tab;
+
+    // Top-panel navigation: number keys (1-N) jump straight to a panel; Tab no
+    // longer switches panels. Skip the digit shortcut while the Wi-Fi password
+    // field is focused so passwords can still contain digits.
+    if (e == Event::Tab || e == Event::TabReverse) return true;
+    if (!confirm_open && !wifi_pass_in->Focused()) {
+      for (int i = 0; i < (int)tab_titles.size(); ++i)
+        if (e == Event::Character(static_cast<char>('1' + i))) {
+          tab = i;
+          return true;
+        }
+    }
     if (tab == 3 && !confirm_open) {
       if (e == Event::Character('r')) { apps_refresh(); return true; }
       if (e == Event::Escape && apps_mode == 1) { apps_refresh(); return true; }
