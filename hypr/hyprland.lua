@@ -17,6 +17,50 @@ local menu = os.getenv("HOME") .. "/.config/wofi/toggle.sh"
 local bar = "waybar"
 local wallpaper = "hyprpaper"
 
+-- Floating layout for the win+M "magic" special-workspace dashboard. easyhub
+-- keeps a fixed-width column on the right; btop floats to fill the whole left
+-- space (instead of dwindle splitting the two panes 50/50). btop's width is
+-- derived from the monitor so it always fills up to easyhub.
+local MAGIC_EASYHUB_W = 510 -- right pane width (logical px)
+local MAGIC_INSET = 12 -- left inset (outer gap + border)
+local MAGIC_TOP = 31 -- top inset (clears the waybar + gap)
+local MAGIC_GAP = 14 -- gap between the two panes
+local MAGIC_RIGHT_GAP = 9 -- gap to the right edge
+local MAGIC_BOTTOM_GAP = 10 -- gap to the bottom edge
+
+local function place_magic_window(w)
+	local mon = w.monitor
+	if not mon then
+		return
+	end
+	local mw = math.floor(mon.width / mon.scale)
+	local mh = math.floor(mon.height / mon.scale)
+	local top = MAGIC_TOP
+	local h = mh - top - MAGIC_BOTTOM_GAP
+	local easyhub_x = mw - MAGIC_RIGHT_GAP - MAGIC_EASYHUB_W
+
+	local x, y, ww
+	if w.title == "easyhub" then
+		x, y, ww = easyhub_x, top, MAGIC_EASYHUB_W
+	else -- btop: fill the rest of the left space up to easyhub
+		x, y, ww = MAGIC_INSET, top, easyhub_x - MAGIC_INSET - MAGIC_GAP
+	end
+
+	hl.dispatch(hl.dsp.window.float({ action = "enable", window = w }))
+	hl.dispatch(hl.dsp.window.resize({ x = ww, y = h, exact = true, window = w }))
+	hl.dispatch(hl.dsp.window.move({ x = x, y = y, exact = true, window = w }))
+end
+
+local function apply_magic_layout()
+	for _, title in ipairs({ "btop", "easyhub" }) do
+		for _, w in ipairs(hl.get_windows({ title = title })) do
+			if w.workspace and w.workspace.name == "special:magic" then
+				place_magic_window(w)
+			end
+		end
+	end
+end
+
 -------------------
 ---- AUTOSTART ----
 -------------------
@@ -37,6 +81,10 @@ hl.on("hyprland.start", function()
 	hl.timer(function()
 		hl.exec_cmd("[workspace special:magic silent] " .. terminal .. " -e easyhub")
 	end, { type = "oneshot", timeout = 1000 })
+
+	-- Once both dashboard windows exist (and their titles are set), pin them
+	-- to the fixed floating layout.
+	hl.timer(apply_magic_layout, { type = "oneshot", timeout = 2000 })
 end)
 
 -------------------------------
@@ -302,7 +350,14 @@ local FLOAT_WS = { ["3"] = true, ["5"] = true }
 
 --- @param win HL.Window
 local function try_float(win)
-	if win and FLOAT_WS[win.workspace.name] then
+	if not win then
+		return
+	end
+	-- Leave the magic dashboard alone; it manages its own floating layout.
+	if win.workspace and win.workspace.special then
+		return
+	end
+	if FLOAT_WS[win.workspace.name] then
 		hl.dispatch(hl.dsp.window.float({ action = "enable", window = win }))
 	else
 		hl.dispatch(hl.dsp.window.float({ action = "disable", window = win }))
