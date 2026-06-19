@@ -89,9 +89,40 @@ enable_services() {
     sudo systemctl enable ly@tty2.service
 }
 
+# Recommend a fully-English locale, then ask before applying.
+#
+# A common installer outcome is a "split" locale: LANG=en_US.UTF-8 for the UI
+# but per-category LC_*=<region>.UTF-8 (e.g. pl_PL) for formats. That makes
+# weekday/month names render in the regional language — e.g. easyhub's clock
+# showed "pią 19 cze" instead of "Fri 19 Jun". Date/numbers are only a *format*;
+# the actual time is unchanged.
+setup_locale() {
+    # Nothing to do if every category is already English/C.
+    if ! locale | grep -qvE '=("?(en_US\.UTF-8|C|POSIX)"?)?$'; then
+        log "Locale already fully English."
+        return
+    fi
+
+    warn "Locale has non-English category overrides (e.g. LC_TIME) — these make"
+    warn "dates/numbers render in the regional language (easyhub clock, waybar,"
+    warn "etc.). Recommended fix: pin everything to English (LANG=en_US.UTF-8)."
+    read -rp "$(printf '\033[1;35m::\033[0m Set locale to English now? [y/N] ')" reply
+    [[ ${reply,,} == y* ]] || { log "Skipping locale change."; return; }
+
+    # Make sure the English locale is actually generated first.
+    if ! locale -a 2>/dev/null | grep -qiE '^en_US\.utf-?8$'; then
+        log "Generating en_US.UTF-8 locale"
+        sudo sed -i 's/^#\s*\(en_US\.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+        sudo locale-gen
+    fi
+    sudo localectl set-locale LANG=en_US.UTF-8
+    log "Locale set to en_US.UTF-8 — re-login (or restart the session) to apply."
+}
+
 # --- run -----------------------------------------------------------------
 need_arch
 install_pkgs
 link_ly
 enable_services
+setup_locale
 log "Done. Reboot or 'sudo systemctl restart ly@tty2' to start the login screen."
