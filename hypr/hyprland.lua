@@ -28,6 +28,15 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd(wallpaper)
 	hl.exec_cmd("systemctl --user start hyprpolkitagent")
 	hl.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/monitor-watch.sh")
+
+	-- "magic" special-workspace dashboard, spawned once at startup:
+	-- kitty+btop on the left, kitty+easyhub on the right. btop is launched
+	-- first so it tiles on the left; easyhub follows after a delay so it tiles
+	-- on the right and the tray watcher above has come up first.
+	hl.exec_cmd("[workspace special:magic silent] " .. terminal .. " -e btop")
+	hl.timer(function()
+		hl.exec_cmd("[workspace special:magic silent] " .. terminal .. " -e easyhub")
+	end, { type = "oneshot", timeout = 1000 })
 end)
 
 -------------------------------
@@ -207,7 +216,8 @@ for i = 1, 10 do
 	hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.group.active({index = i}))
 end
 
--- Special workspace
+-- Special workspace "magic" — toggle the kitty+btop / kitty+easyhub dashboard
+-- that is spawned once at startup (see AUTOSTART).
 hl.bind(mainMod .. " + M", hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + CTRL + M", hl.dsp.window.move({ workspace = "special:magic" }))
 
