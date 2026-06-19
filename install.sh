@@ -115,6 +115,9 @@ setup_locale() {
         sudo sed -i 's/^#\s*\(en_US\.UTF-8 UTF-8\)/\1/' /etc/locale.gen
         sudo locale-gen
     fi
+    # NOTE: `localectl set-locale LANG=...` only adds/updates LANG and keeps any
+    # existing LC_* overrides, so drop those lines first; then pin LANG.
+    sudo sed -i '/^LC_/d' /etc/locale.conf 2>/dev/null || true
     sudo localectl set-locale LANG=en_US.UTF-8
     log "Locale set to en_US.UTF-8 — re-login (or restart the session) to apply."
 }
