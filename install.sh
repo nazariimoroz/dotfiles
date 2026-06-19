@@ -24,6 +24,7 @@ PKGS=(
     kitty             # hypr: terminal = kitty
 
     # tools invoked from the configs
+    btop              # hypr (magic dashboard: kitty -e btop)
     brightnessctl     # ly + hypr + waybar (brightness keys)
     playerctl         # hypr (media keys)
     grimblast-git     # hypr (Print -> screenshot)
