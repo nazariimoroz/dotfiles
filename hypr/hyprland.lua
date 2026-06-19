@@ -18,47 +18,78 @@ local bar = "waybar"
 local wallpaper = "hyprpaper"
 
 -- Floating layout for the win+M "magic" special-workspace dashboard. easyhub
--- keeps a fixed-width column on the right; btop floats to fill the whole left
--- space (instead of dwindle splitting the two panes 50/50). btop's width is
--- derived from the monitor so it always fills up to easyhub.
+-- keeps a fixed-width column on the right; the other panes (btop) float to fill
+-- the remaining space (instead of dwindle splitting them 50/50). Widths are
+-- derived from the monitor so the fill always reaches up to easyhub.
 local MAGIC_EASYHUB_W = 510 -- right pane width (logical px)
 local MAGIC_INSET = 12 -- left inset (outer gap + border)
 local MAGIC_TOP = 31 -- top inset (clears the waybar + gap)
-local MAGIC_GAP = 14 -- gap between the two panes
+local MAGIC_GAP = 14 -- gap between panes
 local MAGIC_RIGHT_GAP = 9 -- gap to the right edge
 local MAGIC_BOTTOM_GAP = 10 -- gap to the bottom edge
 
-local function place_magic_window(w)
-	local mon = w.monitor
-	if not mon then
-		return
-	end
-	local mw = math.floor(mon.width / mon.scale)
-	local mh = math.floor(mon.height / mon.scale)
-	local top = MAGIC_TOP
-	local h = mh - top - MAGIC_BOTTOM_GAP
-	local easyhub_x = mw - MAGIC_RIGHT_GAP - MAGIC_EASYHUB_W
-
-	local x, y, ww
-	if w.title == "easyhub" then
-		x, y, ww = easyhub_x, top, MAGIC_EASYHUB_W
-	else -- btop: fill the rest of the left space up to easyhub
-		x, y, ww = MAGIC_INSET, top, easyhub_x - MAGIC_INSET - MAGIC_GAP
-	end
-
+local function float_window_to(w, x, y, ww, h)
 	hl.dispatch(hl.dsp.window.float({ action = "enable", window = w }))
 	hl.dispatch(hl.dsp.window.resize({ x = ww, y = h, exact = true, window = w }))
 	hl.dispatch(hl.dsp.window.move({ x = x, y = y, exact = true, window = w }))
 end
 
-local function apply_magic_layout()
-	for _, title in ipairs({ "btop", "easyhub" }) do
-		for _, w in ipairs(hl.get_windows({ title = title })) do
-			if w.workspace and w.workspace.name == "special:magic" then
-				place_magic_window(w)
-			end
+-- All windows currently on the "magic" special workspace.
+local function magic_windows()
+	local out = {}
+	for _, w in ipairs(hl.get_windows()) do
+		if w.workspace and w.workspace.name == "special:magic" then
+			out[#out + 1] = w
 		end
 	end
+	return out
+end
+
+-- Pin the window titled `fixed_title` to a fixed-width column hugging `side`
+-- ("left"/"right"), then lay the remaining magic windows out to fill the rest
+-- of the space, split evenly side by side.
+local function align_fixed_pane(fixed_title, fixed_w, side)
+	local fixed, rest = nil, {}
+	for _, w in ipairs(magic_windows()) do
+		if w.title == fixed_title then
+			fixed = w
+		else
+			rest[#rest + 1] = w
+		end
+	end
+	if not fixed or not fixed.monitor then
+		return
+	end
+
+	local mon = fixed.monitor
+	local mw = math.floor(mon.width / mon.scale)
+	local mh = math.floor(mon.height / mon.scale)
+	local h = mh - MAGIC_TOP - MAGIC_BOTTOM_GAP
+
+	local fixed_x, rest_x0, rest_w
+	if side == "right" then
+		fixed_x = mw - MAGIC_RIGHT_GAP - fixed_w
+		rest_x0 = MAGIC_INSET
+		rest_w = fixed_x - MAGIC_GAP - rest_x0
+	else -- "left"
+		fixed_x = MAGIC_INSET
+		rest_x0 = fixed_x + fixed_w + MAGIC_GAP
+		rest_w = (mw - MAGIC_RIGHT_GAP) - rest_x0
+	end
+	float_window_to(fixed, fixed_x, MAGIC_TOP, fixed_w, h)
+
+	local n = #rest
+	if n == 0 then
+		return
+	end
+	local each = math.floor((rest_w - MAGIC_GAP * (n - 1)) / n)
+	for i, w in ipairs(rest) do
+		float_window_to(w, rest_x0 + (i - 1) * (each + MAGIC_GAP), MAGIC_TOP, each, h)
+	end
+end
+
+local function apply_magic_layout()
+	align_fixed_pane("easyhub", MAGIC_EASYHUB_W, "right")
 end
 
 -------------------
