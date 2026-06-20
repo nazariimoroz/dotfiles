@@ -233,8 +233,14 @@ hl.config({
 	},
 })
 
-hl.device({ name = "elan06fa:00-04f3:31ad-touchpad", sensitivity = 0.1 })
-hl.device({ name = "epic-mouse-v1", sensitivity = -0.5 })
+-- Per-device pointer speeds live in user_config.lua (gitignored, machine-local)
+-- since device names are hardware-specific. See user_config.lua.sample.
+local ok, user = pcall(dofile, os.getenv("HOME") .. "/.config/hypr/user_config.lua")
+if ok and type(user) == "table" and user.devices then
+	for _, dev in ipairs(user.devices) do
+		hl.device(dev)
+	end
+end
 
 ---------------------
 ---- KEYBINDINGS ----

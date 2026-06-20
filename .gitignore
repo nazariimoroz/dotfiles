@@ -13,4 +13,5 @@ user-dirs.*
 easyhub/build
 QtProject.conf
 keepassxc
+user_config.lua.sample
 
