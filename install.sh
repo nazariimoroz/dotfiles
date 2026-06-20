@@ -88,7 +88,20 @@ link_ly() {
     sudo ln -sfn "$src" "$dst"
 }
 
+# If sddm is set to start at boot, ask before swapping it for ly — running
+# both login managers fights over the same tty.
 enable_services() {
+    if systemctl is-enabled --quiet sddm.service 2>/dev/null; then
+        read -rp "$(printf '\033[1;35m::\033[0m sddm is enabled — disable it and enable ly instead? [y/N] ')" reply
+        if [[ ${reply,,} == y* ]]; then
+            log "Disabling sddm.service"
+            sudo systemctl disable sddm.service
+        else
+            log "Leaving sddm enabled — skipping ly enable to avoid a conflict."
+            return
+        fi
+    fi
+
     log "Enabling ly login screen (ly@tty2.service)"
     sudo systemctl enable ly@tty2.service
 }
