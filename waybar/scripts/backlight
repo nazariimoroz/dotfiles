@@ -10,6 +10,40 @@
 
 DEF_VALUE=1
 
+# Resolve the backlight device that actually drives the active panel.
+#
+# A machine can expose several backlight devices (e.g. an inert dGPU
+# "nvidia_0" alongside the real "intel_backlight"/"amdgpu_bl0"). Pick the
+# one whose DRM connector is a connected + enabled internal panel, so this
+# works regardless of GPU vendor. Falls back to the device with the largest
+# max_brightness (waybar's own heuristic), then to brightnessctl's default.
+detect_device() {
+	local bl dev conn fallback="" fallback_max=-1 max
+
+	for bl in /sys/class/backlight/*; do
+		[ -e "$bl/device" ] || continue
+		dev=$(readlink -f "$bl/device") || continue
+
+		# The device link may point straight at the connector, or at the
+		# GPU that owns it; check both for an internal panel (eDP/LVDS/DSI).
+		for conn in "$dev" "$dev"/drm/*/*-eDP-* "$dev"/drm/*/*-LVDS-* "$dev"/drm/*/*-DSI-*; do
+			[ -e "$conn/enabled" ] || continue
+			[ "$(cat "$conn/enabled")" = enabled ]   || continue
+			[ "$(cat "$conn/status")" = connected ]  || continue
+			printf '%s\n' "${bl##*/}"
+			return 0
+		done
+
+		max=$(cat "$bl/max_brightness" 2>/dev/null) || max=-1
+		if ((max > fallback_max)); then
+			fallback_max=$max
+			fallback=${bl##*/}
+		fi
+	done
+
+	[ -n "$fallback" ] && printf '%s\n' "$fallback"
+}
+
 usage() {
 	local script=${0##*/}
 
@@ -49,10 +83,13 @@ main() {
 				down) sign='-' ;;
 			esac
 
-			brightnessctl -n set "${value}%${sign}" > /dev/null
+			local device
+			device=$(detect_device)
+
+			brightnessctl ${device:+-d "$device"} -n set "${value}%${sign}" > /dev/null
 
 			local level
-			level=$(brightnessctl -m | awk -F ',' '{print $4}')
+			level=$(brightnessctl ${device:+-d "$device"} -m | awk -F ',' '{print $4}')
 
 			notify-send "Brightness: $level" -h int:value:"$level" -i \
 				"contrast" -h string:x-canonical-private-synchronous:backlight
