@@ -45,7 +45,10 @@ warn() { printf '\033[1;33m!!\033[0m %s\n' "$*" >&2; }
 
 need_arch() {
     command -v pacman >/dev/null || { warn "pacman not found — Arch-based distro required."; exit 1; }
-    [[ $EUID -eq 0 ]] && { warn "run as a normal user (the script calls sudo where needed)."; exit 1; }
+    if [[ $EUID -eq 0 ]]; then
+        warn "run as a normal user (the script calls sudo where needed)."
+        exit 1
+    fi
 }
 
 install_pkgs() {
