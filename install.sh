@@ -126,10 +126,39 @@ setup_locale() {
     log "Locale set to en_US.UTF-8 — re-login (or restart the session) to apply."
 }
 
+# Build the easyhub TUI (FTXUI) and optionally symlink it into ~/.local/bin.
+build_easyhub() {
+    local src="$CONFIG_DIR/easyhub" bin="$HOME/.local/bin/easyhub"
+    [[ -d $src ]] || { warn "missing $src — skipping easyhub build."; return; }
+
+    read -rp "$(printf '\033[1;35m::\033[0m Compile easyhub now? [y/N] ')" reply
+    if [[ ${reply,,} == y* ]]; then
+        log "Installing easyhub build deps: cmake pkgconf glib2"
+        sudo pacman -S --needed cmake pkgconf glib2
+        log "Building easyhub (cmake)"
+        cmake -S "$src" -B "$src/build" -DCMAKE_BUILD_TYPE=Release
+        cmake --build "$src/build" -j
+    else
+        log "Skipping easyhub build."
+    fi
+
+    [[ -x "$src/build/easyhub" ]] || { warn "no easyhub binary at $src/build/easyhub — skipping symlink."; return; }
+
+    read -rp "$(printf '\033[1;35m::\033[0m Symlink easyhub into ~/.local/bin? [y/N] ')" reply
+    if [[ ${reply,,} == y* ]]; then
+        mkdir -p "$HOME/.local/bin"
+        ln -sfn "$src/build/easyhub" "$bin"
+        log "Linked $bin -> $src/build/easyhub"
+    else
+        log "Skipping easyhub symlink."
+    fi
+}
+
 # --- run -----------------------------------------------------------------
 need_arch
 install_pkgs
 link_ly
 enable_services
 setup_locale
+build_easyhub
 log "Done. Reboot or 'sudo systemctl restart ly@tty2' to start the login screen."
