@@ -34,6 +34,7 @@ PKGS=(
     bluez-utils       # waybar (bluetoothctl)
     libpulse          # waybar (pactl)
     jq                # waybar scripts
+    socat             # waybar workspace scripts (live Hyprland event loop)
 
     # font used across wofi / waybar / dunst / hyprlock
     otf-commit-mono-nerd
