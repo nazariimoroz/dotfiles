@@ -301,6 +301,9 @@ for i = 1, 10 do
 	hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.group.active({index = i}))
 end
 
+hl.bind(mainMod .. " + SHIFT + left", hl.dsp.group.move_window({forward = false}))
+hl.bind(mainMod .. " + SHIFT + right", hl.dsp.group.move_window({forward = true}))
+
 -- Special workspace "magic" — toggle the kitty+btop / kitty+easyhub dashboard
 -- that is spawned once at startup (see AUTOSTART).
 hl.bind(mainMod .. " + M", hl.dsp.workspace.toggle_special("magic"))
