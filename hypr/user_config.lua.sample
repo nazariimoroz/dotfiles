@@ -1,0 +1,13 @@
+-- Template for machine-local Hyprland overrides.
+-- Copy to user_config.lua (which is gitignored) and edit for this machine:
+--   cp user_config.lua.sample user_config.lua
+-- Find device names with:  hyprctl devices -j | jq -r '.mice[].name'
+
+return {
+	-- Per-device pointer speed. sensitivity: -1.0 (slow) .. 1.0 (fast),
+	-- 0.0 = libinput default. Each entry is passed straight to hl.device{}.
+	devices = {
+		-- { name = "your-touchpad-name", sensitivity = 0.7 },
+		-- { name = "your-mouse-name",    sensitivity = 0.4 },
+	},
+}
