@@ -1,9 +1,22 @@
 vim.g.mapleader = " "
+vim.g.maplocalleader = " "
 
 vim.opt.completeopt = { "menu", "menuone", "noselect", "popup" }
 vim.opt.signcolumn = "yes"
 vim.opt.termguicolors = true
 vim.opt.background = "dark"
+
+vim.keymap.set("n", "<Esc>", function()
+  if vim.v.hlsearch == 1 then
+    vim.cmd("nohlsearch")
+  else
+    vim.api.nvim_feedkeys(
+      vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
+      "n",
+      false
+    )
+  end
+end, { silent = true })
 
 vim.cmd.colorscheme("vscode")
 vim.cmd("filetype plugin indent on")
